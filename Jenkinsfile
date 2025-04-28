@@ -4,7 +4,7 @@ pipeline {
     environment {
                     TELEGRAM_TOKEN = credentials('telegram-bot-token')
                     TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
-                    TEST_FAILED = 'false'
+                    TEST_FAILED = false
     }
 
     stages {
@@ -17,12 +17,11 @@ pipeline {
             steps {
                 script {
                                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                    echo "✅ Tests fail catchError!"
                                         sh 'mvn clean test'
                                     }
                                     if (currentBuild.currentResult == 'FAILURE' || currentBuild.currentResult == 'UNSTABLE') {
                                         echo "✅ Tests fail!"
-                                        TEST_FAILED = 'true'
+                                        TEST_FAILED = true
                                     }
                                 }
             }
@@ -47,7 +46,7 @@ pipeline {
     post {
                 always {
                     script {
-                        if (env.TEST_FAILED == 'true') {
+                        if (env.TEST_FAILED == true) {
                             def message = """
         🚨 Jenkins Build FAILED or UNSTABLE!
         🛠️ Job: ${env.JOB_NAME}
