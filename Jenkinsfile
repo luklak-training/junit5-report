@@ -22,7 +22,7 @@ pipeline {
         stage('Publish Report') {
             steps {
                 publishHTML(target: [
-                    reportDir: 'backend/target/site',
+                    reportDir: 'target/site',
                     reportFiles: 'surefire-report.html',
                     reportName: 'JUnit5 Test Report',
                     keepAll: true
