@@ -9,9 +9,16 @@ pipeline {
         }
         stage('Build & Test') {
             steps {
-                    sh 'mvn clean test surefire-report:report'
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh 'mvn clean test'
+                        }
             }
         }
+                stage('gen report') {
+                    steps {
+                    sh 'mvn surefire-report:report'
+                    }
+                }
         stage('Publish Report') {
             steps {
                 publishHTML(target: [
