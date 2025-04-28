@@ -17,9 +17,11 @@ pipeline {
             steps {
                 script {
                                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                                    echo "✅ Tests fail catchError!"
                                         sh 'mvn clean test'
                                     }
                                     if (currentBuild.currentResult == 'FAILURE' || currentBuild.currentResult == 'UNSTABLE') {
+                                        echo "✅ Tests fail!"
                                         TEST_FAILED = 'true'
                                     }
                                 }
