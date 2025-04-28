@@ -46,7 +46,7 @@ pipeline {
     post {
                 always {
                     script {
-                        if (env.TEST_FAILED == true) {
+                        if (env.TEST_FAILED == false) {
                             def message = """
         🚨 Jenkins Build FAILED or UNSTABLE!
         🛠️ Job: ${env.JOB_NAME}
