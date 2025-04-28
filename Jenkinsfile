@@ -21,7 +21,7 @@ pipeline {
                                     }
                                     if (currentBuild.currentResult == 'FAILURE' || currentBuild.currentResult == 'UNSTABLE') {
                                         echo "✅ Tests fail!"
-                                        TEST_FAILED = true
+                                        env.TEST_FAILED = true
                                     }
                                 }
             }
