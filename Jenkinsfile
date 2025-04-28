@@ -16,12 +16,13 @@ pipeline {
         stage('Build & Test') {
             steps {
                 script {
+                def testFailed = false
                                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                                         sh 'mvn clean test'
                                     }
                                     if (currentBuild.currentResult == 'FAILURE' || currentBuild.currentResult == 'UNSTABLE') {
                                         echo "✅ Tests fail!"
-                                        env.TEST_FAILED = true
+                                       testFailed = true
                                     }
                                 }
             }
@@ -46,7 +47,7 @@ pipeline {
     post {
                 always {
                     script {
-                        if (env.TEST_FAILED == false) {
+                        if (testFailed) {
                             def message = """
         🚨 Jenkins Build FAILED or UNSTABLE!
         🛠️ Job: ${env.JOB_NAME}
