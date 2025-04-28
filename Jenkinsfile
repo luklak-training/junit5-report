@@ -9,9 +9,7 @@ pipeline {
         }
         stage('Build & Test') {
             steps {
-                dir('backend') { // nếu pom.xml nằm trong thư mục backend
                     sh 'mvn clean test surefire-report:report'
-                }
             }
         }
         stage('Publish Report') {
