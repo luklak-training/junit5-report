@@ -15,14 +15,6 @@ triggers {
         stage('Checkout') {
             steps {
                 checkout scm
-                                script {
-                                    def changes = sh(script: "git rev-list --count origin/${env.BRANCH_NAME}..HEAD", returnStdout: true).trim()
-                                    if (changes == '0') {
-                                        echo "No new commits since last build. Skipping pipeline."
-                                        currentBuild.result = 'NOT_BUILT'
-                                        error("No changes detected")
-                                    }
-                                }
             }
         }
         stage('Build & Test') {
