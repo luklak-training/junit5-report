@@ -81,29 +81,48 @@ pipeline {
 }
 
 def parseHtmlForSummary(htmlContent) {
-        // Sử dụng Jsoup để phân tích HTML (cần thêm thư viện Jsoup vào Jenkins, ví dụ qua Plugin hoặc Maven)
-        def jsoup = new groovy.util.XmlParser()
-        def summaryData = [:]
+    def parser = new XmlParser()
+    def root = parser.parseText(htmlContent)
+    def summaryTable = null
 
-        // Parse HTML content để tìm bảng Summary
-        def root = jsoup.parseText(htmlContent)
-        def summaryTable = root.'**'.find { it.name() == 'table' && it.'th'*.text().contains('Tests') }
-
-        // Trích xuất các giá trị từ bảng Summary
-        def headers = summaryTable.'tr'[0].'th'.collect { it.text() }
-        def values = summaryTable.'tr'[1].'td'.collect { it.text() }
-
-        // Ghép lại thành một map
-        summaryData = [
-            tests: values[0],
-            errors: values[1],
-            failures: values[2],
-            skipped: values[3],
-            successRate: values[4],
-            time: values[5]
-        ]
-        return summaryData
+    root.depthFirst().each { node ->
+        if (node.name() == 'table') {
+            def thTexts = []
+            node.tr[0].th.each { th ->
+                thTexts.add(th.text())
+            }
+            if (thTexts.contains('Tests')) {
+                summaryTable = node
+            }
+        }
     }
+
+    if (summaryTable == null) {
+        error("Summary table not found in HTML!")
+    }
+
+    def headers = []
+    summaryTable.tr[0].th.each { th ->
+        headers.add(th.text())
+    }
+
+    def values = []
+    summaryTable.tr[1].td.each { td ->
+        values.add(td.text())
+    }
+
+    def summaryData = [
+        tests      : values[0],
+        errors     : values[1],
+        failures   : values[2],
+        skipped    : values[3],
+        successRate: values[4],
+        time       : values[5]
+    ]
+
+    return summaryData
+}
+
 
     def sendToTelegram(message) {
         // Gửi thông điệp tới Telegram qua API Bot
