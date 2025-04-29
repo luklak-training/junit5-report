@@ -79,38 +79,6 @@ pipeline {
     }
 }
 
-def parseHtmlForSummary(htmlContent) {
-    Document doc = Jsoup.parse(htmlContent)
-    Element table = doc.selectFirst("table:has(th:contains(Tests))")
-
-    if (table == null) {
-        error("Summary table not found!")
-    }
-
-    def headers = []
-    table.select("tr").first().select("th").each { th ->
-        headers.add(th.text())
-    }
-
-    def values = []
-    table.select("tr").get(1).select("td").each { td ->
-        values.add(td.text())
-    }
-
-    def summaryData = [
-        tests      : values[0],
-        errors     : values[1],
-        failures   : values[2],
-        skipped    : values[3],
-        successRate: values[4],
-        time       : values[5]
-    ]
-
-    return summaryData
-}
-
-
-
     def sendToTelegram(message) {
         // Gửi thông điệp tới Telegram qua API Bot
         def url = "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
