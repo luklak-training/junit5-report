@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+triggers {
+        cron('* * * * *')
+    }
+
     environment {
                     TELEGRAM_TOKEN = credentials('telegram-bot-token')
                     TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
@@ -11,6 +15,14 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                                script {
+                                    def changes = sh(script: "git rev-list --count origin/${env.BRANCH_NAME}..HEAD", returnStdout: true).trim()
+                                    if (changes == '0') {
+                                        echo "No new commits since last build. Skipping pipeline."
+                                        currentBuild.result = 'NOT_BUILT'
+                                        error("No changes detected")
+                                    }
+                                }
             }
         }
         stage('Build & Test') {
@@ -78,21 +90,3 @@ pipeline {
                 }
     }
 }
-//
-//     def sendToTelegram(message) {
-//         // Gửi thông điệp tới Telegram qua API Bot
-//         def url = "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
-//         def payload = [
-//             chat_id: TELEGRAM_CHAT_ID,
-//             text: message,
-//             parse_mode: 'Markdown'
-//         ]
-//
-//         // Sử dụng HTTP Request để gửi
-//         httpRequest(
-//             url: url,
-//             httpMode: 'POST',
-//             contentType: 'APPLICATION_JSON',
-//             requestBody: groovy.json.JsonOutput.toJson(payload)
-//         )
-//     }
