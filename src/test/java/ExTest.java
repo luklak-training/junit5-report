@@ -11,4 +11,9 @@ public class ExTest {
     void t2(){
         Assertions.assertEquals(2,1);
     }
+
+    @Test
+    void t3(){
+        Assertions.assertEquals(1,1);
+    }
 }
