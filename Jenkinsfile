@@ -48,12 +48,19 @@ pipeline {
                 always {
                     script {
                         if (currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE') {
-                            def message = """
-        🚨 Jenkins Build FAILED or UNSTABLE!
-        🛠️ Job: ${env.JOB_NAME}
-        🔢 Build Number: #${env.BUILD_NUMBER}
-        🔗 Link: ${env.BUILD_URL}
-        """
+                def testSummary = parseTestSummary()
+
+                def message = """
+🚨 Jenkins Test Result:
+🛠️ Job: ${env.JOB_NAME}
+🔢 Build: #${env.BUILD_NUMBER}
+✅ Passed: ${testSummary.passed}
+❌ Failed: ${testSummary.failed}
+⚠️ Skipped: ${testSummary.skipped}
+🧪 Total: ${testSummary.total}
+⏱️ Time: ${testSummary.time} seconds
+📄 Report: ${env.BUILD_URL}target/site/surefire-report.html
+"""
                             sh """
                                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
                                     -d chat_id=${TELEGRAM_CHAT_ID} \\
@@ -65,4 +72,33 @@ pipeline {
                     }
                 }
     }
+}
+
+def parseTestSummary() {
+    def summary = [
+        total: 0,
+        failed: 0,
+        skipped: 0,
+        passed: 0,
+        time: 0.0
+    ]
+
+    def testResultFiles = findFiles(glob: 'target/surefire-reports/TEST-*.xml')
+    for (file in testResultFiles) {
+        def content = readFile(file.path)
+        def testSuite = new XmlSlurper().parseText(content)
+
+        int tests = testSuite.@tests.toInteger()
+        int failures = testSuite.@failures.toInteger()
+        int errors = testSuite.@errors.toInteger()
+        int skipped = (testSuite.@skipped.text() ?: "0").toInteger() // Nếu rỗng thì 0
+        double time = (testSuite.@time.text() ?: "0").toDouble()
+
+        summary.total += tests
+        summary.failed += failures + errors
+        summary.skipped += skipped
+        summary.time += time
+    }
+    summary.passed = summary.total - summary.failed - summary.skipped
+    return summary
 }
