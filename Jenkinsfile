@@ -48,19 +48,44 @@ pipeline {
                 always {
                     script {
                         if (currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE') {
-                def testSummary = parseTestSummary()
+            // Đếm tổng tests
+            def totalTests = sh(
+                script: "grep -o 'tests=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
+                returnStdout: true
+            ).trim()
 
-                def message = """
-🚨 Jenkins Test Result:
-🛠️ Job: ${env.JOB_NAME}
-🔢 Build: #${env.BUILD_NUMBER}
-✅ Passed: ${testSummary.passed}
-❌ Failed: ${testSummary.failed}
-⚠️ Skipped: ${testSummary.skipped}
-🧪 Total: ${testSummary.total}
-⏱️ Time: ${testSummary.time} seconds
-📄 Report: ${env.BUILD_URL}target/site/surefire-report.html
-"""
+            def totalFailures = sh(
+                script: "grep -o 'failures=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
+                returnStdout: true
+            ).trim()
+
+            def totalErrors = sh(
+                script: "grep -o 'errors=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
+                returnStdout: true
+            ).trim()
+
+            def totalSkipped = sh(
+                script: "grep -o 'skipped=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
+                returnStdout: true
+            ).trim()
+
+            def totalTime = sh(
+                script: "grep -o 'time=\"[0-9.]*\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9.]*//g' | awk '{sum+=\$1} END {print sum}'",
+                returnStdout: true
+            ).trim()
+
+            echo "Tests=${totalTests}, Failures=${totalFailures}, Errors=${totalErrors}, Skipped=${totalSkipped}, Time=${totalTime}"
+
+            // Tạo tin nhắn Telegram
+            def message = """🧪 *JUnit5 Test Report* 🧪
+
+*Total Tests*: ${totalTests}
+*Failures*: ${totalFailures}
+*Errors*: ${totalErrors}
+*Skipped*: ${totalSkipped}
+*Total Time*: ${totalTime}s
+
+🔗 [View Report](${env.BUILD_URL}HTML_Report/)"""
                             sh """
                                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
                                     -d chat_id=${TELEGRAM_CHAT_ID} \\
