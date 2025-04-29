@@ -1,3 +1,9 @@
+@Grab(group='org.jsoup', module='jsoup', version='1.15.4')
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+
+
 pipeline {
     agent any
 
@@ -81,33 +87,20 @@ pipeline {
 }
 
 def parseHtmlForSummary(htmlContent) {
-    def parser = new XmlParser()
-    def root = parser.parseText(htmlContent)
-    def summaryTable = null
+    Document doc = Jsoup.parse(htmlContent)
+    Element table = doc.selectFirst("table:has(th:contains(Tests))")
 
-    root.depthFirst().each { node ->
-        if (node.name() == 'table') {
-            def thTexts = []
-            node.tr[0].th.each { th ->
-                thTexts.add(th.text())
-            }
-            if (thTexts.contains('Tests')) {
-                summaryTable = node
-            }
-        }
-    }
-
-    if (summaryTable == null) {
-        error("Summary table not found in HTML!")
+    if (table == null) {
+        error("Summary table not found!")
     }
 
     def headers = []
-    summaryTable.tr[0].th.each { th ->
+    table.select("tr").first().select("th").each { th ->
         headers.add(th.text())
     }
 
     def values = []
-    summaryTable.tr[1].td.each { td ->
+    table.select("tr").get(1).select("td").each { td ->
         values.add(td.text())
     }
 
@@ -122,6 +115,7 @@ def parseHtmlForSummary(htmlContent) {
 
     return summaryData
 }
+
 
 
     def sendToTelegram(message) {
