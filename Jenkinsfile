@@ -66,11 +66,11 @@ pipeline {
                     """
                     // Gửi tin nhắn đến Telegram
                     sendToTelegram(message)
-//                             sh """
-//                                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
-//                                     -d chat_id=${TELEGRAM_CHAT_ID} \\
-//                                     -d text="${message}"
-//                             """
+                            sh """
+                                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
+                                    -d chat_id=${TELEGRAM_CHAT_ID} \\
+                                    -d text="${message}"
+                            """
                         } else {
                             echo "✅ Tests passed successfully!"
                         }
@@ -78,21 +78,21 @@ pipeline {
                 }
     }
 }
-
-    def sendToTelegram(message) {
-        // Gửi thông điệp tới Telegram qua API Bot
-        def url = "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
-        def payload = [
-            chat_id: TELEGRAM_CHAT_ID,
-            text: message,
-            parse_mode: 'Markdown'
-        ]
-
-        // Sử dụng HTTP Request để gửi
-        httpRequest(
-            url: url,
-            httpMode: 'POST',
-            contentType: 'APPLICATION_JSON',
-            requestBody: groovy.json.JsonOutput.toJson(payload)
-        )
-    }
+//
+//     def sendToTelegram(message) {
+//         // Gửi thông điệp tới Telegram qua API Bot
+//         def url = "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+//         def payload = [
+//             chat_id: TELEGRAM_CHAT_ID,
+//             text: message,
+//             parse_mode: 'Markdown'
+//         ]
+//
+//         // Sử dụng HTTP Request để gửi
+//         httpRequest(
+//             url: url,
+//             httpMode: 'POST',
+//             contentType: 'APPLICATION_JSON',
+//             requestBody: groovy.json.JsonOutput.toJson(payload)
+//         )
+//     }
