@@ -48,12 +48,12 @@ pipeline {
                 always {
                     script {
                         if (currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE') {
-                    def tests = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 1p", returnStdout: true).trim()
-                    def errors = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 2p", returnStdout: true).trim()
-                    def failures = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 3p", returnStdout: true).trim()
-                    def skipped = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 4p", returnStdout: true).trim()
-                    def successRate = sh(script: "grep -oP '(?<=<td>)[0-9.]+%(?=</td>)' target/surefire-reports/index.html | head -n 1", returnStdout: true).trim()
-                    def time = sh(script: "grep -oP '(?<=<td>)[0-9.]+(?= s</td>)' target/surefire-reports/index.html | head -n 1", returnStdout: true).trim()
+                    def tests = sh(script: "grep -oP '<td[^>]*>\K[0-9]+(?=</td>)' target/site/surefire-report.html | sed -n 1p", returnStdout: true).trim()
+                    def errors = sh(script: "grep -oP '<td[^>]*>\K[0-9]+(?=</td>)' target/site/surefire-report.html | sed -n 2p", returnStdout: true).trim()
+                    def failures = sh(script: "grep -oP '<td[^>]*>\K[0-9]+(?=</td>)' target/site/surefire-report.html | sed -n 3p", returnStdout: true).trim()
+                    def skipped = sh(script: "grep -oP '<td[^>]*>\K[0-9]+(?=</td>)' target/site/surefire-report.html | sed -n 4p", returnStdout: true).trim()
+                    def successRate = sh(script: "grep -oP '(?<=<td>)[0-9.]+%(?=</td>)' target/site/surefire-report.html | head -n 1", returnStdout: true).trim()
+                    def time = sh(script: "grep -oP '(?<=<td>)[0-9.]+(?= s</td>)' target/site/surefire-report.html | head -n 1", returnStdout: true).trim()
 
                     def message = """
                         📋 *Surefire Test Summary*\n\n
