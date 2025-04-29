@@ -1,9 +1,3 @@
-@Grab(group='org.jsoup', module='jsoup', version='1.15.4')
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-
-
 pipeline {
     agent any
 
