@@ -54,23 +54,22 @@ pipeline {
                 always {
                     script {
                         if (currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE') {
-                    def htmlFilePath = 'target/site/surefire-report.html'  // Đường dẫn tới file HTML của bạn
-                    def htmlContent = readFile(htmlFilePath)
+                    def tests = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 1p", returnStdout: true).trim()
+                    def errors = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 2p", returnStdout: true).trim()
+                    def failures = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 3p", returnStdout: true).trim()
+                    def skipped = sh(script: "grep -oP '(?<=<td>)[0-9]+(?=</td>)' target/surefire-reports/index.html | sed -n 4p", returnStdout: true).trim()
+                    def successRate = sh(script: "grep -oP '(?<=<td>)[0-9.]+%(?=</td>)' target/surefire-reports/index.html | head -n 1", returnStdout: true).trim()
+                    def time = sh(script: "grep -oP '(?<=<td>)[0-9.]+(?= s</td>)' target/surefire-reports/index.html | head -n 1", returnStdout: true).trim()
 
-                    // Parse HTML để lấy thông tin từ phần Summary
-                    def summaryData = parseHtmlForSummary(htmlContent)
-
-                    // Tạo nội dung tin nhắn Telegram
                     def message = """
                         📋 *Surefire Test Summary*\n\n
-                        *Tests*: ${summaryData.tests}\n
-                        *Errors*: ${summaryData.errors}\n
-                        *Failures*: ${summaryData.failures}\n
-                        *Skipped*: ${summaryData.skipped}\n
-                        *Success Rate*: ${summaryData.successRate}\n
-                        *Time*: ${summaryData.time}\n
+                        *Tests*: ${tests}\n
+                        *Errors*: ${errors}\n
+                        *Failures*: ${failures}\n
+                        *Skipped*: ${skipped}\n
+                        *Success Rate*: ${successRate}\n
+                        *Time*: ${time} seconds\n
                     """
-
                     // Gửi tin nhắn đến Telegram
                     sendToTelegram(message)
 //                             sh """
