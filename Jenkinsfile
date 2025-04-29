@@ -48,49 +48,30 @@ pipeline {
                 always {
                     script {
                         if (currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE') {
-            // Đếm tổng tests
-            def totalTests = sh(
-                script: "grep -o 'tests=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
-                returnStdout: true
-            ).trim()
+                    def htmlFilePath = 'target/site/surefire-report.html'  // Đường dẫn tới file HTML của bạn
+                    def htmlContent = readFile(htmlFilePath)
 
-            def totalFailures = sh(
-                script: "grep -o 'failures=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
-                returnStdout: true
-            ).trim()
+                    // Parse HTML để lấy thông tin từ phần Summary
+                    def summaryData = parseHtmlForSummary(htmlContent)
 
-            def totalErrors = sh(
-                script: "grep -o 'errors=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
-                returnStdout: true
-            ).trim()
+                    // Tạo nội dung tin nhắn Telegram
+                    def message = """
+                        📋 *Surefire Test Summary*\n\n
+                        *Tests*: ${summaryData.tests}\n
+                        *Errors*: ${summaryData.errors}\n
+                        *Failures*: ${summaryData.failures}\n
+                        *Skipped*: ${summaryData.skipped}\n
+                        *Success Rate*: ${summaryData.successRate}\n
+                        *Time*: ${summaryData.time}\n
+                    """
 
-            def totalSkipped = sh(
-                script: "grep -o 'skipped=\"[0-9]\\+\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9]*//g' | awk '{sum+=\$1} END {print sum}'",
-                returnStdout: true
-            ).trim()
-
-            def totalTime = sh(
-                script: "grep -o 'time=\"[0-9.]*\"' target/surefire-reports/TEST-*.xml | sed 's/[^0-9.]*//g' | awk '{sum+=\$1} END {print sum}'",
-                returnStdout: true
-            ).trim()
-
-            echo "Tests=${totalTests}, Failures=${totalFailures}, Errors=${totalErrors}, Skipped=${totalSkipped}, Time=${totalTime}"
-
-            // Tạo tin nhắn Telegram
-            def message = """🧪 *JUnit5 Test Report* 🧪
-
-*Total Tests*: ${totalTests}
-*Failures*: ${totalFailures}
-*Errors*: ${totalErrors}
-*Skipped*: ${totalSkipped}
-*Total Time*: ${totalTime}s
-
-🔗 [View Report](${env.BUILD_URL}HTML_Report/)"""
-                            sh """
-                                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
-                                    -d chat_id=${TELEGRAM_CHAT_ID} \\
-                                    -d text="${message}"
-                            """
+                    // Gửi tin nhắn đến Telegram
+                    sendToTelegram(message)
+//                             sh """
+//                                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
+//                                     -d chat_id=${TELEGRAM_CHAT_ID} \\
+//                                     -d text="${message}"
+//                             """
                         } else {
                             echo "✅ Tests passed successfully!"
                         }
@@ -99,31 +80,46 @@ pipeline {
     }
 }
 
-def parseTestSummary() {
-    def summary = [
-        total: 0,
-        failed: 0,
-        skipped: 0,
-        passed: 0,
-        time: 0.0
-    ]
+def parseHtmlForSummary(htmlContent) {
+        // Sử dụng Jsoup để phân tích HTML (cần thêm thư viện Jsoup vào Jenkins, ví dụ qua Plugin hoặc Maven)
+        def jsoup = new groovy.util.XmlParser()
+        def summaryData = [:]
 
-    def testResultFiles = findFiles(glob: 'target/surefire-reports/TEST-*.xml')
-    for (file in testResultFiles) {
-        def content = readFile(file.path)
-        def testSuite = new XmlSlurper().parseText(content)
+        // Parse HTML content để tìm bảng Summary
+        def root = jsoup.parseText(htmlContent)
+        def summaryTable = root.'**'.find { it.name() == 'table' && it.'th'*.text().contains('Tests') }
 
-        int tests = testSuite.@tests.toInteger()
-        int failures = testSuite.@failures.toInteger()
-        int errors = testSuite.@errors.toInteger()
-        int skipped = (testSuite.@skipped.text() ?: "0").toInteger() // Nếu rỗng thì 0
-        double time = (testSuite.@time.text() ?: "0").toDouble()
+        // Trích xuất các giá trị từ bảng Summary
+        def headers = summaryTable.'tr'[0].'th'.collect { it.text() }
+        def values = summaryTable.'tr'[1].'td'.collect { it.text() }
 
-        summary.total += tests
-        summary.failed += failures + errors
-        summary.skipped += skipped
-        summary.time += time
+        // Ghép lại thành một map
+        summaryData = [
+            tests: values[0],
+            errors: values[1],
+            failures: values[2],
+            skipped: values[3],
+            successRate: values[4],
+            time: values[5]
+        ]
+        return summaryData
     }
-    summary.passed = summary.total - summary.failed - summary.skipped
-    return summary
+
+    def sendToTelegram(message) {
+        // Gửi thông điệp tới Telegram qua API Bot
+        def url = "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+        def payload = [
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'Markdown'
+        ]
+
+        // Sử dụng HTTP Request để gửi
+        httpRequest(
+            url: url,
+            httpMode: 'POST',
+            contentType: 'APPLICATION_JSON',
+            requestBody: groovy.json.JsonOutput.toJson(payload)
+        )
+    }
 }
