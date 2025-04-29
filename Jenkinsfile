@@ -122,4 +122,3 @@ def parseHtmlForSummary(htmlContent) {
             requestBody: groovy.json.JsonOutput.toJson(payload)
         )
     }
-}
