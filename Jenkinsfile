@@ -61,19 +61,11 @@ triggers {
 
                     def message = """
                         📋 *Surefire Test Summary*
-
                         *Tests*: ${tests}
-
                         *Errors*: ${errors}
-
                         *Failures*: ${failures}
-
                         *Skipped*: ${skipped}
-
-
                         *Success Rate*: ${successRate}
-
-
                         *Time*: ${time} seconds
                     """
                     // Gửi tin nhắn đến Telegram
