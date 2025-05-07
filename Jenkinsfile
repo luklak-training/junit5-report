@@ -60,20 +60,29 @@ triggers {
                     def time = sh(script: "grep -oP '(?<=<td>)[0-9.]+(?= s</td>)' target/site/surefire-report.html | head -n 1", returnStdout: true).trim()
 
                     def message = """
-                        📋 *Surefire Test Summary*\n\n
-                        *Tests*: ${tests}\n
-                        *Errors*: ${errors}\n
-                        *Failures*: ${failures}\n
-                        *Skipped*: ${skipped}\n
-                        *Success Rate*: ${successRate}\n
-                        *Time*: ${time} seconds\n
+                        📋 *Surefire Test Summary*
+
+                        *Tests*: ${tests}
+
+                        *Errors*: ${errors}
+
+                        *Failures*: ${failures}
+
+                        *Skipped*: ${skipped}
+
+
+                        *Success Rate*: ${successRate}
+
+
+                        *Time*: ${time} seconds
                     """
                     // Gửi tin nhắn đến Telegram
 //                     sendToTelegram(message)
                             sh """
                                 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \\
                                     -d chat_id=${TELEGRAM_CHAT_ID} \\
-                                    -d text="${message}"
+                                    -d text="${message}" \\
+                                    -d parse_mode=markdown
                             """
                         } else {
                             echo "✅ Tests passed successfully!"
